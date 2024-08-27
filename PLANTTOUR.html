@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Material Defectuoso</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap');
+
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background-color: #2C2F33;
+            color: #FFFFFF;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background-color: #23272A;
+            padding: 20px;
+            border-radius: 10px;
+            position: relative;
+        }
+
+        h1 {
+            font-family: 'Roboto', sans-serif;
+            color: #7289DA;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2em;
+            font-weight: 900;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #99AAB5;
+            font-size: 1em;
+        }
+
+        input, select, textarea, button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 5px;
+            border: none;
+            border-radius: 10px;
+            background-color: #40444B;
+            color: #FFFFFF;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+
+        input:focus, textarea:focus, button:focus {
+            outline: none;
+            background-color: #5C5F67;
+        }
+
+        .checkbox-group {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .checkbox-group label {
+            width: 30%;
+            color: #99AAB5;
+            font-size: 1em;
+        }
+
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: space-between;
+        }
+
+        .row .form-group {
+            flex: 1;
+            min-width: calc(25% - 20px);
+        }
+
+        button {
+            background-color: #7289DA;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-weight: 500;
+        }
+
+        button:hover {
+            background-color: #5C6BC0;
+        }
+
+        .suggestions {
+            border-radius: 10px;
+            background-color: #40444B;
+            color: #FFFFFF;
+            list-style: none;
+            padding: 0;
+            margin-top: 5px;
+            max-height: 150px;
+            overflow-y: auto;
+            position: absolute;
+            width: calc(100% - 24px);
+            z-index: 1000;
+        }
+
+        .suggestions li {
+            padding: 12px;
+            cursor: pointer;
+        }
+
+        .suggestions li:hover {
+            background-color: #5C5F67;
+        }
+
+        .language-select {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #40444B;
+            color: #FFFFFF;
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+            font-size: 1em;
+            cursor: pointer;
+            width: auto;
+        }
+
+        /* Estilos para el modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #23272A;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            width: 300px;
+        }
+
+        .modal-content h2 {
+            color: #7289DA;
+            margin-bottom: 20px;
+        }
+
+        .modal-content button {
+            width: 100px;
+            margin-top: 20px;
+            background-color: #7289DA;
+            border: none;
+            border-radius: 10px;
+            padding: 10px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .modal-content button:hover {
+            background-color: #5C6BC0;
+        }
+
+        /* Estilos para el botón de dictado */
+        #btn-dictate {
+            position: relative;
+            padding-right: 40px; /* Espacio para el círculo */
+        }
+
+        #recording-indicator {
+            display: none;
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            width: 18px;
+            height: 18px;
+            background-color: red;
+            border: 2px solid black;
+            border-radius: 50%;
+            transform: translateY(-50%);
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <select class="language-select" id="language-select" onchange="changeLanguage()">
+            <option value="es" selected>Español</option>
+            <option value="en">English</option>
+        </select>
+
+        <h1 id="title">Reporte de Material Defectuoso</h1>
+
+        <form id="defectForm" onsubmit="return handleFormSubmission();">
+            
+            <!-- Grupo 1: Información Automática -->
+            <div class="row">
+                <div class="form-group">
+                    <label for="folio" id="label-folio">Folio</label>
+                    <input type="text" id="folio" name="folio" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="turno" id="label-turno">Turno</label>
+                    <input type="text" id="turno" name="turno" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="fecha" id="label-fecha">Fecha</label>
+                    <input type="text" id="fecha" name="fecha" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="hora" id="label-hora">Hora</label>
+                    <input type="time" id="hora" name="hora" readonly>
+                </div>
+            </div>
+            
+            <!-- Grupo 2: Información del Producto -->
+            <div class="row">
+                <div class="form-group">
+                    <label for="noParte" id="label-noParte">No. de parte</label>
+                    <input type="text" id="noParte" name="noParte" required>
+                </div>
+                <div class="form-group">
+                    <label for="noCircuito" id="label-noCircuito">No. de circuito</label>
+                    <input type="text" id="noCircuito" name="noCircuito" required>
+                </div>
+                <div class="form-group">
+                    <label for="color" id="label-color">Color</label>
+                    <input type="text" id="color" name="color" autocomplete="off" required oninput="showSuggestions(this.value)">
+                    <ul id="colorSuggestions" class="suggestions" style="display: none;"></ul>
+                </div>
+                <div class="form-group">
+                    <label for="calibre" id="label-calibre">Calibre</label>
+                    <input type="text" id="calibre" name="calibre" required>
+                </div>
+            </div>
+
+            <!-- Grupo 3: Detalles de Producción -->
+            <div class="row">
+                <div class="form-group">
+                    <label for="noLote" id="label-noLote">No. de lote</label>
+                    <input type="text" id="noLote" name="noLote" required>
+                </div>
+                <div class="form-group">
+                    <label for="noMaquina" id="label-noMaquina">No. de máquina</label>
+                    <input type="text" id="noMaquina" name="noMaquina" required>
+                </div>
+                <div class="form-group">
+                    <label for="noOperador" id="label-noOperador">No. operador</label>
+                    <input type="text" id="noOperador" name="noOperador" required>
+                </div>
+                <div class="form-group">
+                    <label for="cantLote" id="label-cantLote">Cant. lote</label>
+                    <input type="text" id="cantLote" name="cantLote" required>
+                </div>
+            </div>
+            
+            <!-- Grupo 4: Descripción del Problema -->
+            <div class="row">
+                <div class="form-group" style="flex: 1;">
+                    <label for="descripcionProblema" id="label-descripcionProblema">Descripción del problema</label>
+                    <textarea id="descripcionProblema" name="descripcionProblema" required></textarea>
+                    <button type="button" onclick="startProblemDictation();" id="btn-dictate">Dictar Descripción
+                        <span id="recording-indicator"></span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Grupo 5: Inspección -->
+            <div class="row">
+                <div class="form-group">
+                    <label for="inspector" id="label-inspector">Inspector</label>
+                    <input type="text" id="inspector" name="inspector" required>
+                </div>
+                <div class="form-group">
+                    <label for="dispMaterial" id="label-dispMaterial">Disp. Material</label>
+                    <input type="text" id="dispMaterial" name="dispMaterial" required>
+                </div>
+                <div class="form-group">
+                    <label for="area" id="label-area">Área</label>
+                    <input type="text" id="area" name="area" required>
+                </div>
+                <div class="form-group">
+                    <label for="cantSorteada" id="label-cantSorteada">Cant. Sorteada</label>
+                    <input type="text" id="cantSorteada" name="cantSorteada" required>
+                </div>
+            </div>
+
+            <!-- Grupo 6: Evaluación del Defecto -->
+            <div class="row">
+                <div class="form-group">
+                    <label for="cantDefectuosa" id="label-cantDefectuosa">Cant. Defectuosa</label>
+                    <input type="text" id="cantDefectuosa" name="cantDefectuosa" required>
+                </div>
+                <div class="form-group">
+                    <label for="tipoDefecto" id="label-tipoDefecto">Tipo de defecto</label>
+                    <div class="checkbox-group">
+                        <label><input type="radio" id="critico" name="tipoDefecto" value="Critico" required> Crítico</label>
+                        <label><input type="radio" id="noCritico" name="tipoDefecto" value="No critico" required> No crítico</label>
+                        <label><input type="radio" id="repetitivo" name="tipoDefecto" value="Repetitivo" required> Repetitivo</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="numAplicador" id="label-numAplicador">Numero de aplicador</label>
+                    <input type="text" id="numAplicador" name="numAplicador" required>
+                </div>
+                <div class="form-group">
+                    <label for="noTerminal" id="label-noTerminal">No. de Terminal</label>
+                    <input type="text" id="noTerminal" name="noTerminal" required>
+                </div>
+            </div>
+
+            <!-- Imagen Adjunta -->
+            <div class="row">
+                <div class="form-group">
+                    <label for="imagen" id="label-imagen">Adjuntar Imagen</label>
+                    <input type="file" id="imagen" name="imagen" accept="image/*" capture="environment" required>
+                </div>
+            </div>
+
+            <button type="submit" id="btn-submit">Finalizar</button>
+        </form>
+    </div>
+
+    <!-- Ventana Modal -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <h2 id="modal-message"></h2>
+            <button onclick="reloadPage()">Aceptar</button>
+        </div>
+    </div>
+
+    <script>
+        let recognitionLanguage = 'es-ES';
+        let isRecording = false;
+
+        // Cambiar el idioma de la página
+        function changeLanguage() {
+            const lang = document.getElementById('language-select').value;
+            recognitionLanguage = lang === 'es' ? 'es-ES' : 'en-US';
+
+            const translations = {
+                es: {
+                    title: 'Reporte de Material Defectuoso',
+                    folio: 'Folio',
+                    turno: 'Turno',
+                    fecha: 'Fecha',
+                    hora: 'Hora',
+                    noParte: 'No. de parte',
+                    noCircuito: 'No. de circuito',
+                    color: 'Color',
+                    calibre: 'Calibre',
+                    noLote: 'No. de lote',
+                    noMaquina: 'No. de máquina',
+                    noOperador: 'No. operador',
+                    cantLote: 'Cant. lote',
+                    descripcionProblema: 'Descripción del problema',
+                    inspector: 'Inspector',
+                    dispMaterial: 'Disp. Material',
+                    area: 'Área',
+                    cantSorteada: 'Cant. Sorteada',
+                    cantDefectuosa: 'Cant. Defectuosa',
+                    tipoDefecto: 'Tipo de defecto',
+                    numAplicador: 'Numero de aplicador',
+                    noTerminal: 'No. de Terminal',
+                    btnDictate: 'Dictar Descripción',
+                    btnSubmit: 'Finalizar',
+                    matutino: 'Matutino',
+                    vespertino: 'Vespertino',
+                    imagen: 'Adjuntar Imagen'
+                },
+                en: {
+                    title: 'Defective Material Report',
+                    folio: 'Folio',
+                    turno: 'Shift',
+                    fecha: 'Date',
+                    hora: 'Time',
+                    noParte: 'Part No.',
+                    noCircuito: 'Circuit No.',
+                    color: 'Color',
+                    calibre: 'Gauge',
+                    noLote: 'Batch No.',
+                    noMaquina: 'Machine No.',
+                    noOperador: 'Operator No.',
+                    cantLote: 'Batch Qty',
+                    descripcionProblema: 'Problem Description',
+                    inspector: 'Inspector',
+                    dispMaterial: 'Material Disp.',
+                    area: 'Area',
+                    cantSorteada: 'Sorted Qty',
+                    cantDefectuosa: 'Defective Qty',
+                    tipoDefecto: 'Type of Defect',
+                    numAplicador: 'Applicator No.',
+                    noTerminal: 'Terminal No.',
+                    btnDictate: 'Dictate Description',
+                    btnSubmit: 'Submit',
+                    matutino: 'Morning',
+                    vespertino: 'Afternoon',
+                    imagen: 'Attach Image'
+                }
+            };
+
+            const elementsToTranslate = [
+                { id: 'title', key: 'title' },
+                { id: 'label-folio', key: 'folio' },
+                { id: 'label-turno', key: 'turno' },
+                { id: 'label-fecha', key: 'fecha' },
+                { id: 'label-hora', key: 'hora' },
+                { id: 'label-noParte', key: 'noParte' },
+                { id: 'label-noCircuito', key: 'noCircuito' },
+                { id: 'label-color', key: 'color' },
+                { id: 'label-calibre', key: 'calibre' },
+                { id: 'label-noLote', key: 'noLote' },
+                { id: 'label-noMaquina', key: 'noMaquina' },
+                { id: 'label-noOperador', key: 'noOperador' },
+                { id: 'label-cantLote', key: 'cantLote' },
+                { id: 'label-descripcionProblema', key: 'descripcionProblema' },
+                { id: 'label-inspector', key: 'inspector' },
+                { id: 'label-dispMaterial', key: 'dispMaterial' },
+                { id: 'label-area', key: 'area' },
+                { id: 'label-cantSorteada', key: 'cantSorteada' },
+                { id: 'label-cantDefectuosa', key: 'cantDefectuosa' },
+                { id: 'label-tipoDefecto', key: 'tipoDefecto' },
+                { id: 'label-numAplicador', key: 'numAplicador' },
+                { id: 'label-noTerminal', key: 'noTerminal' },
+                { id: 'label-imagen', key: 'imagen' },
+                { id: 'btn-dictate', key: 'btnDictate' },
+                { id: 'btn-submit', key: 'btnSubmit' }
+            ];
+
+            elementsToTranslate.forEach(item => {
+                document.getElementById(item.id).textContent = translations[lang][item.key];
+            });
+
+            assignTurno(); // Reasignar el turno al cambiar el idioma
+        }
+
+        // Generar ID único para el folio basado en día, mes, año y 4 dígitos aleatorios
+        function generateFolio() {
+            const now = new Date();
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const year = String(now.getFullYear()).slice(-2);
+            const randomDigits = Math.floor(1000 + Math.random() * 9000);
+            const uniqueFolio = `${day}${month}${year}${randomDigits}`;
+            document.getElementById('folio').value = uniqueFolio;
+        }
+
+        // Asignar el turno automáticamente
+        function assignTurno() {
+            const currentHour = new Date().getHours();
+            const lang = document.getElementById('language-select').value;
+            const turno = currentHour < 16 
+                ? (lang === 'es' ? "Matutino" : "Morning") 
+                : (lang === 'es' ? "Vespertino" : "Afternoon");
+            document.getElementById('turno').value = turno;
+        }
+
+        // Asignar la fecha actual automáticamente con formato día/mes/año
+        function assignFecha() {
+            const today = new Date();
+            const day = String(today.getDate()).padStart(2, '0');
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const year = today.getFullYear();
+            document.getElementById('fecha').value = `${day}/${month}/${year}`;
+        }
+
+        // Asignar la hora actual automáticamente
+        function assignHora() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('hora').value = `${hours}:${minutes}`;
+        }
+
+        // Sugerencias de color
+        const colorSuggestions = ['Rojo', 'Verde', 'Azul', 'Amarillo', 'Negro', 'Blanco', 'Gris', 'Rosa', 'Naranja', 'Marron'];
+        
+        function showSuggestions(value) {
+            const suggestionBox = document.getElementById('colorSuggestions');
+            suggestionBox.innerHTML = '';
+            if (value.length > 0) {
+                const filteredSuggestions = colorSuggestions.filter(color => color.toLowerCase().startsWith(value.toLowerCase()));
+                filteredSuggestions.forEach(suggestion => {
+                    const li = document.createElement('li');
+                    li.textContent = suggestion;
+                    li.onclick = () => {
+                        document.getElementById('color').value = suggestion;
+                        suggestionBox.style.display = 'none';
+                    };
+                    suggestionBox.appendChild(li);
+                });
+                suggestionBox.style.display = filteredSuggestions.length > 0 ? 'block' : 'none';
+            } else {
+                suggestionBox.style.display = 'none';
+            }
+        }
+
+        // Dictado de voz para la descripción del problema
+        const problemRecognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        problemRecognition.lang = recognitionLanguage;
+        problemRecognition.onresult = (event) => {
+            document.getElementById('descripcionProblema').value += event.results[0][0].transcript;
+        };
+        function startProblemDictation() {
+            problemRecognition.lang = recognitionLanguage;
+            problemRecognition.start();
+        }
+        problemRecognition.onstart = () => {
+            isRecording = true;
+            document.getElementById('recording-indicator').style.display = 'inline-block'; // Mostrar indicador de grabación
+        };
+        problemRecognition.onend = () => {
+            isRecording = false;
+            document.getElementById('recording-indicator').style.display = 'none'; // Ocultar indicador de grabación
+        };
+
+        // Función para eliminar acentos de una cadena de texto
+        function removeAccents(str) {
+            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        }
+
+        // Redimensionar y convertir la imagen
+        function resizeAndConvertImage(imageFile, callback) {
+            const img = document.createElement('img');
+            const canvas = document.createElement('canvas');
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                img.src = e.target.result;
+            };
+
+            img.onload = function() {
+                const maxWidth = 1920; // 1080p width (1920x1080)
+                const maxHeight = 1080;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > maxWidth) {
+                        height *= maxWidth / width;
+                        width = maxWidth;
+                    }
+                } else {
+                    if (height > maxHeight) {
+                        width *= maxHeight / height;
+                        height = maxHeight;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob((blob) => {
+                    callback(blob);
+                }, 'image/jpeg', 0.8); // Convertir a JPEG con 80% de calidad
+            };
+
+            reader.readAsDataURL(imageFile);
+        }
+
+        // Manejar la presentación del formulario
+        function handleFormSubmission() {
+            const folio = document.getElementById('folio').value;
+            const turno = document.getElementById('turno').value;
+            const fecha = document.getElementById('fecha').value;
+            const hora = document.getElementById('hora').value;
+            const tipoDefecto = document.querySelector('input[name="tipoDefecto"]:checked');
+
+            if (!folio || !turno || !fecha || !hora || !tipoDefecto) {
+                alert("Por favor, completa todos los campos obligatorios.");
+                return false;
+            }
+
+            const noParte = removeAccents(document.getElementById('noParte').value);
+            const noCircuito = removeAccents(document.getElementById('noCircuito').value);
+            const color = removeAccents(document.getElementById('color').value);
+            const calibre = removeAccents(document.getElementById('calibre').value);
+            const noLote = removeAccents(document.getElementById('noLote').value);
+            const noMaquina = removeAccents(document.getElementById('noMaquina').value);
+            const noOperador = removeAccents(document.getElementById('noOperador').value);
+            const cantLote = removeAccents(document.getElementById('cantLote').value);
+            const descripcionProblema = removeAccents(document.getElementById('descripcionProblema').value);
+            const inspector = removeAccents(document.getElementById('inspector').value);
+            const dispMaterial = removeAccents(document.getElementById('dispMaterial').value);
+            const area = removeAccents(document.getElementById('area').value);
+            const cantSorteada = removeAccents(document.getElementById('cantSorteada').value);
+            const cantDefectuosa = removeAccents(document.getElementById('cantDefectuosa').value);
+            const numAplicador = removeAccents(document.getElementById('numAplicador').value);
+            const noTerminal = removeAccents(document.getElementById('noTerminal').value);
+            const imagen = document.getElementById('imagen').files[0];
+
+            // Crear contenido CSV con encabezados
+            const csvHeaders = [
+                "Folio", "Turno", "Fecha", "Hora", "No. de parte", "No. de circuito", "Color", "Calibre", 
+                "No. de lote", "No. de maquina", "No. operador", "Cant. lote", "Descripcion del problema", 
+                "Inspector", "Disp. Material", "Area", "Cant. Sorteada", "Cant. Defectuosa", 
+                "Tipo de defecto", "Numero de aplicador", "No. de Terminal", "Imagen adjunta"
+            ];
+
+            const csvContent = [
+                csvHeaders.join(","),
+                [
+                    folio, turno, fecha, hora, noParte, noCircuito, color, calibre, noLote, noMaquina, noOperador, 
+                    cantLote, descripcionProblema, inspector, dispMaterial, area, cantSorteada, cantDefectuosa, 
+                    tipoDefecto.value, numAplicador, noTerminal, imagen.name
+                ].join(",")
+            ].join("\n");
+
+            downloadCSV(folio, csvContent);
+
+            resizeAndConvertImage(imagen, (blob) => {
+                downloadImage(folio, blob);
+                showModal(folio);  // Mostrar el modal con el número de folio
+            });
+
+            return false;  // Prevenir la recarga de la página
+        }
+
+        // Función para descargar el CSV con el nombre del folio
+        function downloadCSV(folio, csvContent) {
+            const csvFile = new Blob([csvContent], { type: 'text/csv' });
+            const downloadLink = document.createElement("a");
+            downloadLink.download = `${folio}.csv`;
+            downloadLink.href = window.URL.createObjectURL(csvFile);
+            downloadLink.style.display = "none";
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+        }
+
+        // Función para descargar la imagen redimensionada y convertida
+        function downloadImage(folio, blob) {
+            const downloadLink = document.createElement("a");
+            downloadLink.download = `${folio}.jpg`; // Usar solo el folio como nombre y convertir a JPG
+            downloadLink.href = URL.createObjectURL(blob);
+            downloadLink.style.display = "none";
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+        }
+
+        // Mostrar el modal
+        function showModal(folio) {
+            document.getElementById('modal-message').textContent = `Reporte de folio número ${folio} generado.`;
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        // Recargar la página
+        function reloadPage() {
+            location.reload();
+        }
+
+        // Inicializar el formulario con los valores automáticos
+        window.onload = function() {
+            generateFolio();
+            assignTurno();
+            assignFecha();
+            assignHora();
+        };
+    </script>
+
+</body>
+</html>
